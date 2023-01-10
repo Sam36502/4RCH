@@ -3,6 +3,8 @@ package util
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
@@ -11,7 +13,10 @@ const (
 )
 
 type Options struct {
-	PixelSize int32 `json:"pixel_size"`
+	PixelSize int32    `json:"pixel_size"`
+	TargetFPS int32    `json:"target_fps"`
+	ColourFG  rl.Color `json:"colour_fg"`
+	ColourBG  rl.Color `json:"colour_bg"`
 }
 
 var GlobalOptions Options

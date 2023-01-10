@@ -1,5 +1,5 @@
 
-BIN=Arch40
+BIN=4RCH
 BIN_DIR=bin/lin
 SRC_DIR=src
 

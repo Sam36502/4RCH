@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/Sam36502/Arch40/src/hardware"
-	"github.com/Sam36502/Arch40/src/util"
+	hw "github.com/Sam36502/4RCH/src/hardware"
+	"github.com/Sam36502/4RCH/src/util"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -13,67 +14,45 @@ const (
 )
 
 func main() {
+
+	// Load Options from file
 	err := util.LoadOptions(OPTIONS_FILE)
 	if err != nil {
 		fmt.Printf("[ERROR]: Failed to load options file '%s'\nPlease make sure the options file is in the same directory as the Arch40 binary.\n", OPTIONS_FILE)
 		return
 	}
 
-	windowSize := 128 * util.GlobalOptions.PixelSize
-	rl.InitWindow(windowSize, windowSize, "Arch40")
+	// Initialise Console window
+	windowSize := 16 * util.GlobalOptions.PixelSize
+	rl.InitWindow(windowSize, windowSize, "4RCH")
+	if util.GlobalOptions.TargetFPS > 0 {
+		rl.SetTargetFPS(util.GlobalOptions.TargetFPS)
+	}
 
-	//// DEBUG ////
-	pp4 := hardware.NewPP4()
-	// Clear Background
-	pp4.SetArguments([4]uint8{
-		0b0111,
-		0b0000,
-		0b0000,
-		0b0000,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_ALTR)
-	// Load Test Palette
-	pp4.SetArguments([4]uint8{
-		0b0000,
-		0b0010,
-		0b0100,
-		0b1000,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_STPI)
-	// Load Test Graphic
-	pp4.SetArguments([4]uint8{
-		0b0000,
-		0b0000,
-		0b1000,
-		0b0001,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_STTI)
-	pp4.SetArguments([4]uint8{
-		0b0000,
-		0b0100,
-		0b1001,
-		0b1001,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_STTI)
-	pp4.SetArguments([4]uint8{
-		0b0000,
-		0b0110,
-		0b1111,
-		0b1111,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_STTI)
-	pp4.SetArguments([4]uint8{
-		0b0000,
-		0b0000,
-		0b0010,
-		0b0010,
-	})
-	pp4.Tick(hardware.EXP_PP4_INS_DRTL)
+	screen := hw.NewScreen(
+		util.GlobalOptions.ColourFG,
+		util.GlobalOptions.ColourBG,
+		util.GlobalOptions.PixelSize,
+	)
+	vm := hw.NewMachine(screen)
 
+	// Try to load cartridge provided as argument if available
+	if len(os.Args) > 1 {
+		vm.LoadCartridgeFile(os.Args[1])
+	}
+
+	// Main loop
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 
-		pp4.DrawScreen()
+		// Try to load a cartridge from dropped files
+		if vm.Cart == nil && rl.IsFileDropped() {
+			fs := rl.LoadDroppedFiles()
+			vm.LoadCartridgeFile(fs[len(fs)-1])
+		}
+
+		vm.Tick()
+		vm.DrawDisplay()
 
 		rl.EndDrawing()
 	}
