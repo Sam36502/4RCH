@@ -13,10 +13,12 @@ const (
 )
 
 type Options struct {
-	PixelSize int32    `json:"pixel_size"`
-	TargetFPS int32    `json:"target_fps"`
-	ColourFG  rl.Color `json:"colour_fg"`
-	ColourBG  rl.Color `json:"colour_bg"`
+	MasterVol float32   `json:"master_vol"`
+	PixelSize int32     `json:"pixel_size"`
+	TargetFPS int32     `json:"target_fps"`
+	ColourFG  rl.Color  `json:"colour_fg"`
+	ColourBG  rl.Color  `json:"colour_bg"`
+	Samples   [4]string `json:"samples"`
 }
 
 var GlobalOptions Options

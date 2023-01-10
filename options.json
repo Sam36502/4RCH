@@ -1,4 +1,5 @@
 {
+    "master_vol": 0.5,
     "pixel_size": 16,
     "target_fps": 120,
     "colour_fg": {
@@ -12,5 +13,11 @@
         "G": 255,
         "B": 255,
         "A": 255
-    }
+    },
+    "samples": [
+        "resources/square.wav",
+        "resources/triangle.wav",
+        "resources/sawtooth.wav",
+        "resources/noise.wav"
+    ]
 }

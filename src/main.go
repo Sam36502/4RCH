@@ -29,12 +29,16 @@ func main() {
 		rl.SetTargetFPS(util.GlobalOptions.TargetFPS)
 	}
 
+	// Initialise Hardware
 	screen := hw.NewScreen(
 		util.GlobalOptions.ColourFG,
 		util.GlobalOptions.ColourBG,
 		util.GlobalOptions.PixelSize,
 	)
-	vm := hw.NewMachine(screen)
+	soundCard := hw.NewSoundCard(util.GlobalOptions.MasterVol, util.GlobalOptions.Samples)
+	vm := hw.NewMachine()
+	vm.PlugIn(screen)
+	vm.PlugIn(soundCard)
 
 	// Try to load cartridge provided as argument if available
 	if len(os.Args) > 1 {
@@ -42,21 +46,29 @@ func main() {
 	}
 
 	// Main loop
+	var blink int8 = 0
 	for !rl.WindowShouldClose() {
 		rl.BeginDrawing()
 
 		// Try to load a cartridge from dropped files
-		if vm.Cart == nil && rl.IsFileDropped() {
-			fs := rl.LoadDroppedFiles()
-			vm.LoadCartridgeFile(fs[len(fs)-1])
+		if vm.Cart == nil {
+			if blink > 0 {
+				screen.DrawBMP(hw.BMP_NO_CART)
+			} else {
+				screen.Clear()
+			}
+			blink++
+			if rl.IsFileDropped() {
+				fs := rl.LoadDroppedFiles()
+				vm.LoadCartridgeFile(fs[len(fs)-1])
+			}
 		}
 
 		vm.Tick()
-		vm.DrawDisplay()
 
 		rl.EndDrawing()
 	}
 
-	util.LoadOptions(OPTIONS_FILE)
+	util.SaveOptions(OPTIONS_FILE)
 	rl.CloseWindow()
 }

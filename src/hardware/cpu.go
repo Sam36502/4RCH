@@ -17,8 +17,6 @@ type Command struct {
 	Args []nybble
 }
 
-type RAMListener func(val nybble)
-
 func (vm *Machine) ExecuteCommand(cmd Command) {
 
 	// Check correct no. of args were passed
@@ -121,10 +119,6 @@ func (vm *Machine) ExecuteCommand(cmd Command) {
 	}
 
 	vm.InsPointer = nextInsPointer
-}
-
-func (vm *Machine) AddRAMListener(page, addr nybble, lnr RAMListener) {
-	vm.RAMListeners[(byte(page)<<4)|byte(addr)] = lnr
 }
 
 func (i Instruction) String() string {

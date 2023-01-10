@@ -9,26 +9,29 @@ type Machine struct {
 	Accumulator  nybble
 	RAM          [16][16]nybble
 	RAMListeners map[byte]RAMListener
-	Display      *Screen
 	Cart         *Cart
 	InsPointer   byte
+	peripherals  []Peripheral
 	isRunning    bool
 	ticks        int8
 }
 
-func NewMachine(display *Screen) *Machine {
+func NewMachine() *Machine {
 	vm := Machine{
 		Accumulator:  0,
 		RAM:          [16][16]nybble{},
 		RAMListeners: map[byte]RAMListener{},
-		Display:      display,
 		Cart:         nil,
 		InsPointer:   0,
 		isRunning:    false,
 		ticks:        0,
 	}
-	vm.AddRAMListener(PERIPHERAL_PAGE, FPG_SCR_VAL, onScreenWritten)
 	return &vm
+}
+
+func (vm *Machine) PlugIn(prph Peripheral) {
+	vm.peripherals = append(vm.peripherals, prph)
+	vm.AddRAMListener(prph.GetListener(vm))
 }
 
 // Tries to load a cartridge from a file
@@ -44,16 +47,6 @@ func (vm *Machine) LoadCartridgeFile(filename string) {
 // Tells the VM to perform one action
 func (vm *Machine) Tick() {
 	if vm.Cart == nil {
-		if vm.ticks > 0 {
-			vm.Display.DrawBMP(BMP_NO_CART)
-		} else {
-			vm.Display.Clear()
-		}
-		vm.ticks++
 		return
 	}
-}
-
-func (vm *Machine) DrawDisplay() {
-	vm.Display.DrawVRAM()
 }

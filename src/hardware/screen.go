@@ -25,6 +25,12 @@ func (s *Screen) Clear() {
 	rl.ClearBackground(s.bg)
 }
 
+func (s *Screen) Invert() {
+	for i, row := range s.vram {
+		s.vram[i] = ^row
+	}
+}
+
 func (s *Screen) DrawBMP(bmp [16]uint16) {
 	rl.ClearBackground(s.bg)
 	var x, y int32
@@ -44,6 +50,73 @@ func (s *Screen) DrawBMP(bmp [16]uint16) {
 
 func (s *Screen) DrawVRAM() {
 	s.DrawBMP(s.vram)
+}
+
+func (s *Screen) Tick(vm *Machine) {
+
+	// Check if top opt bits are used
+	opt := vm.RAM[PERIPHERAL_PAGE][FPG_SND_OPT]
+	if (opt>>3)%2 == 1 {
+		s.Clear()
+		opt &= 0b0111
+	}
+	if (opt>>2)%2 == 1 {
+		s.Invert()
+		opt &= 0b1011
+	}
+	vm.RAM[PERIPHERAL_PAGE][FPG_SCR_OPT] = opt
+
+	// Update state of the screen_value address
+	x := vm.RAM[PERIPHERAL_PAGE][FPG_SCR_X]
+	y := vm.RAM[PERIPHERAL_PAGE][FPG_SCR_Y]
+	var val nybble = 0
+	switch opt % 4 {
+
+	case 0b00:
+		val = nybble(s.vram[y] >> (8 - 1 - x) % 2)
+
+	case 0b01:
+		val = nybble(s.vram[y] >> (8 - 4 - x) % 16)
+
+	case 0b10:
+		for i := nybble(0); i < 4; i++ {
+			val |= nybble(s.vram[y+i]>>(8-1-x)%2) << (4 - i)
+		}
+
+	case 0b11:
+		val |= nybble(s.vram[y+0]>>(8-2-x)%4) << 2
+		val |= nybble(s.vram[y+1]>>(8-2-x)%4) << 0
+	}
+	vm.RAM[PERIPHERAL_PAGE][FPG_SCR_VAL] = val
+
+}
+
+func (s *Screen) GetListener(vm *Machine) ([]byte, RAMListener) {
+	return []byte{(PERIPHERAL_PAGE << 4) | FPG_SCR_VAL},
+		func(val nybble) {
+
+			x := vm.RAM[PERIPHERAL_PAGE][FPG_SCR_X]
+			y := vm.RAM[PERIPHERAL_PAGE][FPG_SCR_Y]
+			opt := vm.RAM[PERIPHERAL_PAGE][FPG_SCR_OPT]
+			switch opt % 4 {
+
+			case 0b00:
+				s.vram[y] ^= uint16(val<<(8-1-x)) % 2
+
+			case 0b01:
+				s.vram[y] ^= uint16(val<<(8-4-x)) % 16
+
+			case 0b10:
+				for i := nybble(0); i < 4; i++ {
+					s.vram[y+i] ^= (uint16(val<<(8-1-x)) % 2) << (4 - i)
+				}
+
+			case 0b11:
+				s.vram[y+0] ^= (uint16(val<<(8-2-x)) % 4) << 2
+				s.vram[y+1] ^= (uint16(val<<(8-2-x)) % 4) << 0
+			}
+
+		}
 }
 
 // func ErrorPopup(msg string) {
