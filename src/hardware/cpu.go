@@ -8,16 +8,19 @@ import (
 
 type Instruction struct {
 	Opcode string
-	Binary nybble
+	Binary Nybble
 	Nargs  int
 }
 
 type Command struct {
 	Ins  Instruction
-	Args []nybble
+	Args []Nybble
 }
 
 func (vm *Machine) ExecuteCommand(cmd Command) {
+	if !vm.IsRunning {
+		return
+	}
 
 	// Check correct no. of args were passed
 	if cmd.Ins.Nargs != len(cmd.Args) {
@@ -26,16 +29,16 @@ func (vm *Machine) ExecuteCommand(cmd Command) {
 	}
 
 	// Dereference memory references ahead of time for convenience
-	memVal := nybble(0)
+	memVal := Nybble(0)
 	if len(cmd.Args) == 2 {
-		memVal = vm.RAM[cmd.Args[1]][cmd.Args[2]]
+		memVal = vm.RAM[cmd.Args[1]][cmd.Args[0]]
 	}
 
 	nextInsPointer := vm.InsPointer + 1
 	switch cmd.Ins.Binary {
 
 	case 0b0000:
-		vm.isRunning = false
+		vm.IsRunning = false
 
 	case 0b0001:
 		vm.Accumulator = cmd.Args[0]
@@ -47,8 +50,10 @@ func (vm *Machine) ExecuteCommand(cmd Command) {
 		vm.RAM[cmd.Args[1]][cmd.Args[0]] = vm.Accumulator
 
 		// Call RAM-Listeners if any
-		if lnr, ex := vm.RAMListeners[byte(cmd.Args[1]<<4)|byte(cmd.Args[0])]; ex {
-			lnr(vm.Accumulator)
+		if lnrs, ex := vm.RAMListeners[byte(cmd.Args[1]<<4)|byte(cmd.Args[0])]; ex {
+			for _, lnr := range lnrs {
+				lnr(vm.Accumulator)
+			}
 		}
 
 	case 0b0100:
@@ -100,13 +105,13 @@ func (vm *Machine) ExecuteCommand(cmd Command) {
 		length := (cmd.Args[0]%2)<<4 | cmd.Args[1]
 		dur := time.Duration(mul * float64(length) * float64(time.Second.Nanoseconds()))
 
-		vm.isRunning = false
+		vm.IsRunning = false
 		time.AfterFunc(dur, func() {
-			vm.isRunning = true
+			vm.IsRunning = true
 		})
 
 	case 0b1101:
-		if vm.Accumulator == cmd.Args[0] {
+		if vm.Accumulator != cmd.Args[0] {
 			nextInsPointer += byte(cmd.Args[1])
 		}
 

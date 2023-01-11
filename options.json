@@ -1,7 +1,7 @@
 {
     "master_vol": 0.5,
-    "pixel_size": 16,
-    "target_fps": 120,
+    "pixel_size": 64,
+    "target_fps": 240,
     "colour_fg": {
         "R": 0,
         "G": 0,
@@ -19,5 +19,28 @@
         "resources/triangle.wav",
         "resources/sawtooth.wav",
         "resources/noise.wav"
-    ]
+    ],
+    "inputs": {
+        "kc_p1_a": 72,
+        "kc_p1_b": 74,
+        "kc_p1_down": 83,
+        "kc_p1_left": 65,
+        "kc_p1_right": 68,
+        "kc_p1_up": 87,
+        "kc_p1_x": 75,
+        "kc_p1_y": 76,
+        "kc_p2_a": 321,
+        "kc_p2_b": 322,
+        "kc_p2_down": 264,
+        "kc_p2_left": 263,
+        "kc_p2_right": 262,
+        "kc_p2_up": 265,
+        "kc_p2_x": 324,
+        "kc_p2_y": 325,
+        "kc_power": 256,
+        "kc_reset": 259
+    },
+    "configure_key": false,
+    "mon_addrs": [],
+    "debug_mode": false
 }

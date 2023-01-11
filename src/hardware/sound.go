@@ -14,10 +14,10 @@ type SoundCard struct {
 }
 
 type Tone struct {
-	Wave   nybble
-	Octave nybble
-	Pitch  nybble
-	Volume nybble
+	Wave   Nybble
+	Octave Nybble
+	Pitch  Nybble
+	Volume Nybble
 }
 
 const (
@@ -92,7 +92,7 @@ func (sc *SoundCard) GetListener(vm *Machine) ([]byte, RAMListener) {
 			(PERIPHERAL_PAGE << 4) | FPG_SND_PTC,
 			(PERIPHERAL_PAGE << 4) | FPG_SND_VOL,
 		},
-		func(val nybble) {
+		func(val Nybble) {
 
 			opt := vm.RAM[PERIPHERAL_PAGE][FPG_SND_OPT]
 			ptc := vm.RAM[PERIPHERAL_PAGE][FPG_SND_PTC]
@@ -107,6 +107,10 @@ func (sc *SoundCard) GetListener(vm *Machine) ([]byte, RAMListener) {
 			sc.PlayTone(tone)
 
 		}
+}
+
+func (sc *SoundCard) Reset() {
+	sc.StopAll()
 }
 
 func (sc *SoundCard) Terminate() {

@@ -1,11 +1,28 @@
 package hardware
 
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/Sam36502/4RCH/src/util"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
+
 type Peripheral interface {
 	Tick(vm *Machine)
 	GetListener(vm *Machine) ([]byte, RAMListener)
+	Reset()
 }
 
-type RAMListener func(val nybble)
+type RAMListener func(val Nybble)
+
+type MemMonitor struct {
+	addrs  []byte
+	vals   []Nybble
+	colour []rl.Color
+}
+
+var MON_CLR = rl.SkyBlue
 
 const (
 	PERIPHERAL_PAGE = 0xF
@@ -37,6 +54,62 @@ const (
 
 func (vm *Machine) AddRAMListener(trigAddrs []byte, lnr RAMListener) {
 	for _, addr := range trigAddrs {
-		vm.RAMListeners[addr] = lnr
+		vm.RAMListeners[addr] = append(vm.RAMListeners[addr], lnr)
 	}
+}
+
+// Creates a memory monitor from a list of hex addresses
+func NewMemMonitor(hexAddrs []string) *MemMonitor {
+	mon := MemMonitor{
+		addrs:  []byte{},
+		vals:   []Nybble{},
+		colour: []rl.Color{},
+	}
+	for _, hex := range hexAddrs {
+		mii, err := strconv.ParseUint(hex, 16, 32)
+		if err != nil || mii > 255 {
+			fmt.Printf("[WARNING]: Invalid monitor address provided '%s', Must be single hex byte.", hex)
+			continue
+		}
+		mon.addrs = append(mon.addrs, byte(mii))
+		mon.vals = append(mon.vals, 0)
+		mon.colour = append(mon.colour, MON_CLR)
+	}
+	return &mon
+}
+
+func (mon *MemMonitor) Tick(vm *Machine) {
+	yPos := int32(10)
+	if util.GlobalOptions.DebugMode {
+		yPos += 20
+	}
+	rl.DrawText("Monitored Addresses:", 10, yPos, 20, MON_CLR)
+	for i, addr := range mon.addrs {
+		yPos += 20
+		val := mon.vals[i]
+		rl.DrawText(
+			fmt.Sprintf("0x%02X: %02d, 0x%X, 0b%04b", addr, val, val, val),
+			10, yPos, 20, mon.colour[i],
+		)
+	}
+	for i, col := range mon.colour {
+		mon.colour[i] = util.StepTowardsColour(col, MON_CLR)
+	}
+}
+
+func (mon *MemMonitor) GetListener(vm *Machine) ([]byte, RAMListener) {
+	return mon.addrs, func(val Nybble) {
+		for i, addr := range mon.addrs {
+			val := vm.RAM[addr>>4][addr%16]
+			if mon.vals[i] != val {
+				mon.colour[i] = rl.Red
+				mon.vals[i] = val
+			}
+		}
+	}
+}
+
+func (mon *MemMonitor) Reset() {
+	mon.vals = []Nybble{}
+	mon.colour = []rl.Color{}
 }

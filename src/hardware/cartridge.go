@@ -1,6 +1,8 @@
 package hardware
 
-import "io/ioutil"
+import (
+	"io/ioutil"
+)
 
 const (
 	SIZE_PROG = 256
@@ -9,8 +11,8 @@ const (
 )
 
 type Cart struct {
-	Program    [SIZE_PROG]nybble
-	Data       [SIZE_DATA]nybble
+	Program    [SIZE_PROG]Nybble
+	Data       [SIZE_DATA]Nybble
 	IsWritable bool
 }
 
@@ -36,11 +38,12 @@ func LoadCartFromFile(filename string) (*Cart, error) {
 	for bi, b := range fileData {
 		for hn := 0; hn < 2; hn++ {
 			ni := (bi << 1) | hn // Calculate nybble index
-			if ni <= SIZE_PROG {
-				cart.Program[ni] = nybble(b)
+			n := Nybble(b>>((1-hn)*4)) % 16
+
+			if ni < SIZE_PROG {
+				cart.Program[ni] = n
 			} else {
-				ni -= SIZE_PROG
-				cart.Data[ni] = nybble(b)
+				cart.Data[ni-SIZE_PROG] = n
 			}
 		}
 	}
@@ -55,21 +58,37 @@ func SaveCartToFile(filename string, cart Cart) error {
 		flagByte |= (1 << 0)
 	}
 
-	fileData := []byte{flagByte}
+	fileData := make([]byte, SIZE_PROG+1)
+	fileData[0] = flagByte
 
-	for ni := 0; ni < SIZE_PROG+SIZE_DATA; ni++ {
+	// Write Program
+	for ni := 0; ni < SIZE_PROG; ni++ {
 		bi := (ni >> 1) + 1
 		hn := ni % 2
+		b := byte(cart.Program[ni])
+		fileData[bi] |= b << ((1 - hn) * 4)
+	}
 
-		b := byte(0)
-		if ni <= SIZE_PROG {
-			b = byte(cart.Program[ni])
-		} else {
-			ni -= SIZE_PROG
-			b = byte(cart.Data[ni])
+	// Find end of data block
+	size := SIZE_DATA
+	for i := SIZE_DATA - 1; i >= 0; i-- {
+		if cart.Data[i] != 0 {
+			size = i + 1
+			break
 		}
+		if i == 0 {
+			size = 0
+		}
+	}
 
-		fileData[bi] |= b << (hn * 4)
+	// Write Data
+	for ni := 0; ni < size; ni++ {
+		if ni%2 == 0 {
+			fileData = append(fileData, byte(cart.Data[ni]))
+		} else {
+			bi := 1 + SIZE_PROG + ni/2
+			fileData[bi] |= byte(cart.Data[ni]) << 4
+		}
 	}
 
 	return ioutil.WriteFile(filename, fileData, FILE_MODE)
