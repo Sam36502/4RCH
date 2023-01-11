@@ -100,7 +100,7 @@ func main() {
 			}
 		}
 
-		if util.GlobalOptions.DebugMode {
+		if util.GlobalOptions.DebugMode && vm.Cart != nil {
 			cmd := vm.Program[vm.InsPointer]
 			rl.ClearBackground(util.GlobalOptions.ColourBG)
 			vm.TickPeripherals()

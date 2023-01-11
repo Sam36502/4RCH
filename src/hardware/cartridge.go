@@ -58,7 +58,7 @@ func SaveCartToFile(filename string, cart Cart) error {
 		flagByte |= (1 << 0)
 	}
 
-	fileData := make([]byte, SIZE_PROG+1)
+	fileData := make([]byte, (SIZE_PROG/2)+1)
 	fileData[0] = flagByte
 
 	// Write Program
@@ -93,3 +93,30 @@ func SaveCartToFile(filename string, cart Cart) error {
 
 	return ioutil.WriteFile(filename, fileData, FILE_MODE)
 }
+
+func (c *Cart) Tick(vm *Machine) {
+	addr := 0 |
+		uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_H])<<8 |
+		uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_M])<<4 |
+		uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_L])
+
+	vm.RAM[PERIPHERAL_PAGE][FPG_DSK_VAL] = vm.Cart.Data[addr]
+}
+
+func (c *Cart) GetListener(vm *Machine) ([]byte, RAMListener) {
+	return []byte{(PERIPHERAL_PAGE << 4) | FPG_DSK_VAL}, func(val Nybble) {
+		if !vm.Cart.IsWritable {
+			c.Tick(vm)
+			return
+		}
+
+		addr := uint16(0) |
+			uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_H])<<8 |
+			uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_M])<<4 |
+			uint16(vm.RAM[PERIPHERAL_PAGE][FPG_DSK_L])
+
+		vm.Cart.Data[addr] = val
+	}
+}
+
+func (c *Cart) Reset() {}

@@ -62,6 +62,7 @@ func (vm *Machine) LoadCartridge(c *Cart) {
 		i += ins.Nargs
 		vm.Program = append(vm.Program, cmd)
 	}
+	vm.PlugIn(c)
 }
 
 // Tells the VM to perform one action

@@ -80,6 +80,6 @@ var ALL_INS = [16]Instruction{
 	{
 		Opcode: "JMP mem.",
 		Binary: 0b1111,
-		Nargs:  0,
+		Nargs:  2,
 	},
 }

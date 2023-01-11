@@ -119,7 +119,9 @@ func (vm *Machine) ExecuteCommand(cmd Command) {
 		nextInsPointer = byte(cmd.Args[1]<<4) | byte(cmd.Args[0])
 
 	case 0b1111:
-		nextInsPointer = byte(memVal)
+		cm := vm.RAM[0][cmd.Args[0]]
+		pg := vm.RAM[0][cmd.Args[1]]
+		nextInsPointer = byte(pg<<4) | byte(cm)
 
 	}
 
